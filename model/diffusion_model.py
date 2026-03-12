@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from diffusion_config import DiffusionConfig
 from model.unet_model import SimpleUNet
+import torch.nn.functional as F
 
 
 class Diffusion(nn.Module):
@@ -34,3 +35,22 @@ class Diffusion(nn.Module):
         
         # return noise aswell for training ground truth
         return (sqrt_alpha_hat * x) + (sqrt_one_minus_alpha_hat * noise), noise
+    
+    def sample_timesteps(self, n):
+        """
+        Docstring
+        
+        n: batch_size
+        """
+        return torch.randint(low=1, high=self.config.timesteps, size=(n,), device=self.config.device)
+    
+    def forward(self, x):
+        """Training: Calculate Loss"""
+        # Step 1: Sample timesteps. get random timestep for each image in the batch
+        t = self.sample_timesteps(x.shape[0])
+        # Step 2: Add noise to images
+        x_t , gt_noise = self.noise_images(x, t)
+        # Step 3: Predict the noise using a U-Net model
+        pred_noise = self.model(x_t, t)
+        # Step 4: Calculate the MSE Loss
+        return F.mse_loss(gt_noise, pred_noise)
