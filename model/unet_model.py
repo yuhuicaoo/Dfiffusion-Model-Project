@@ -50,12 +50,12 @@ class Block(nn.Module):
             self.transform = nn.Conv2d(
                 out_channels, out_channels, kernel_size=4, stride=2, padding=1
             )
-        
+
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
         self.bnorm1 = nn.GroupNorm(num_groups=8, num_channels=out_channels)
         self.bnorm2 = nn.GroupNorm(num_groups=8, num_channels=out_channels)
         self.relu = nn.GELU()
-    
+
     def forward(self, x, t):
         # first convolution
         h = self.bnorm1(self.relu(self.conv1(x)))
@@ -70,9 +70,45 @@ class Block(nn.Module):
 class SimpleUNet(nn.Module):
     def __init__(self, config: DiffusionConfig):
         super().__init__()
+        in_channels = config.in_channels
+        output_dim = config.in_channels
+        time_emb_dim = config.time_emb_dim
+        down_channels = (64, 128, 256, 512, 1024)
+        up_channels = (1024, 512, 256, 128, 64)
 
-        pass
+        self.time_mlp = nn.Sequential(
+            SinusoidalPositionEmbeddings(time_emb_dim),
+            nn.Linear(time_emb_dim, time_emb_dim),
+            nn.GELU,
+        )
+
+        self.conv0 = nn.Conv2d(in_channels, down_channels[0], kernel_size=3, padding=1)
+        self.downs = nn.ModuleList(
+            [
+                Block(down_channels[i], down_channels[i + 1], time_emb_dim)
+                for i in range(len(down_channels) - 1)
+            ]
+        )
+        self.ups = nn.ModuleList(
+            [
+                Block(up_channels[i], up_channels[i+1], time_emb_dim, up=True)
+                for i in range(len(up_channels) - 1)
+            ]
+        )
+        self.output = nn.Conv2d(up_channels[-1], output_dim, kernel_size=1)
 
     def forward(self, x, timestep):
+        t = self.time_mlp(timestep)
+        x = self.conv0(x)
 
-        pass
+        residual_inputs = []
+        for down in self.downs:
+            x = down(x, t)
+            residual_inputs.append(x)
+
+        for up in self.ups:
+            residual_x = residual_inputs.pop()
+            # skip connection
+            x = torch.cat((x, residual_inputs), dim=-1)
+            x = up(x, t)
+        return self.output(x)
