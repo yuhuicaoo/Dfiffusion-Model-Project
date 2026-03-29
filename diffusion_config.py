@@ -4,7 +4,7 @@ import torch
 @dataclass
 class DiffusionConfig:
     image_size: int = 32
-    in_channels: int = 3        # RGB color channels
+    in_channels: int = 3        # number of color channels (1 = greyscale, 3 = RGB)
     base_channels: int = 64     # network width (larger = smarter but slower)
     time_emb_dim: int = 256     # size of time signal vector
     timesteps: int = 1000       # how many steps until image becomes pure static noise

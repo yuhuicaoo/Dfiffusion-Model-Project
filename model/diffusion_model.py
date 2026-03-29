@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from diffusion_config import DiffusionConfig
 from model.unet_model import SimpleUNet
 
@@ -23,6 +24,9 @@ class Diffusion(nn.Module):
         
         :param x: batch of clean images, shape: (batch, in_channels, image_size, image_size) or (B,C,H,W)
         :param t: batch of random timesteps, shape: (batch,)
+
+        :returns x_t: batch of noisy images
+        :returns noise: batch of pure Gaussian noise used to create x_t
         """
 
         # reshape to match dimensions of x for broadcasting
@@ -34,3 +38,24 @@ class Diffusion(nn.Module):
         
         # return noise aswell for training ground truth
         return (sqrt_alpha_hat * x) + (sqrt_one_minus_alpha_hat * noise), noise
+    
+    def sample_timesteps(self, n):
+        """Generates a batch (of size n) of random timesteps
+        
+        :param n: batch size
+        :return t: batch of random timesteps of size n (batch size)
+        """
+        return torch.randint(low=1, high=self.config.timesteps, size=(n,), device=self.config.device)
+    
+    def forward(self, x):
+        # Sample a random batch (size n) of timesteps
+        timesteps = self.sample_timesteps(x.shape[0])
+
+        # Create noisy images and get noise used.
+        x_t , noise = self.noise_images(x, timesteps)
+
+        # Predict the noise applied to the original image using a simple U-Net model
+        predicted_noise = self.model(x_t, timesteps)
+
+        # Calculte MSE Loss between predicted and actual noise
+        return F.mse_loss(noise, predicted_noise)
