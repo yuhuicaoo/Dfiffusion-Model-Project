@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from diffusion_config import DiffusionConfig
 from model.unet_model import SimpleUNet
+import torch.nn.functional as F
 
 
 class Diffusion(nn.Module):
