@@ -12,3 +12,7 @@ class DiffusionConfig:
     # noise scheduler (small noise at start, more noise at end)
     beta_start: float = 1e-4
     beta_end: float = 0.02
+    # Training: 
+    batch_size: int = 64
+    epochs: int = 100
+    learning_rate: float = 1e-4

@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 from diffusion_config import DiffusionConfig
 
-
 class SinusoidalPositionEmbeddings(nn.Module):
     def __init__(self, dim):
         super().__init__()
@@ -79,7 +78,7 @@ class SimpleUNet(nn.Module):
         self.time_mlp = nn.Sequential(
             SinusoidalPositionEmbeddings(time_emb_dim),
             nn.Linear(time_emb_dim, time_emb_dim),
-            nn.GELU,
+            nn.GELU(),
         )
 
         self.conv0 = nn.Conv2d(in_channels, down_channels[0], kernel_size=3, padding=1)
@@ -108,7 +107,7 @@ class SimpleUNet(nn.Module):
 
         for up in self.ups:
             residual_x = residual_inputs.pop()
-            # skip connection
-            x = torch.cat((x, residual_inputs), dim=-1)
+            # concatenate skip connection to inputs
+            x = torch.cat((x, residual_x), dim=-1)
             x = up(x, t)
         return self.output(x)

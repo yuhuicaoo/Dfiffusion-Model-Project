@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from diffusion_config import DiffusionConfig
 from model.unet_model import SimpleUNet
-import torch.nn.functional as F
 
 
 class Diffusion(nn.Module):
@@ -60,3 +59,35 @@ class Diffusion(nn.Module):
 
         # Calculte MSE Loss between predicted and actual noise
         return F.mse_loss(noise, predicted_noise)
+    
+    @torch.no_grad()
+    def sample(self, n_samples):
+        """Inference step: generate images from pure noise"""
+
+        self.model.eval()
+        x = torch.randn((n_samples, self.config.in_channels, self.config.image_size, self.config.image_size)).to(self.config.device)        # (n_samples, in_channels, image_size, image_size)
+
+        # loop backwards from t= timesteps-1 to t=1
+        for i in reversed(range(1, self.config.timesteps)):
+            t = (torch.ones(n_samples) * i).long().to(self.config.device)
+
+            # get predicted noise from U-Net model
+            predicted_noise = self.model(x, t)
+
+            # get noise schedule values for specific timestep
+            alpha = self.alpha[t][:, None, None, None]
+            alpha_hat = self.alpha_hat[t][:, None, None, None]
+            beta = self.beta[t][:, None, None, None]
+
+            # add new Gaussian noise only if t > 1, else zeros if t = 1
+            if i > 1:
+                noise = torch.rand_like(x)
+            else:
+                noise = torch.zeros_like(x)
+            
+            x = (1 / torch.sqrt(alpha)) * (x - ((1 - alpha) / torch.sqrt(1 - alpha)) * predicted_noise) + torch.sqrt(beta) *noise
+        
+        self.model.train()
+        # scale from [-1, 1] to [0, 1]
+        x = (x.clamp(-1,1) + 1) /2
+        return x
