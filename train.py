@@ -48,27 +48,27 @@ def train():
         diffusion_model.train()
         epoch_loss = 0.0
 
-        with tqdm(dataloader, desc=f"Epoch {epoch+1}/{config.epochs}", leave=False) as pbar:
-            for images, _ in pbar:
-                images = images.to(config.device)
+        for step, (images, _) in enumerate(dataloader):
+            images = images.to(config.device)
 
-                optimiser.zero_grad()
+            optimiser.zero_grad()
 
-                loss = diffusion_model(images)
-                loss.backward()
+            loss = diffusion_model(images)
+            loss.backward()
 
-                optimiser.step()
+            optimiser.step()
 
-                epoch_loss += loss.item()
+            epoch_loss += loss.item()
 
-                
-                avg = epoch_loss / (pbar.n + 1)
-                pbar.set_postfix(loss=f"{avg:.4f}")
-                   
+            if step % 100 == 0:
+                avg = epoch_loss / (step + 1)
+                print(f"Epoch {epoch+1}/{config.epochs} | Step {step}/{len(dataloader)} | Loss {avg:.4f}")
 
         lr_scheduler.step()
         avg_loss = epoch_loss / len(dataloader)
-        tqdm.write(f"Epoch {epoch+1} — avg loss: {avg_loss:.4f}")
+        print(f"Epoch {epoch+1} finished | Avg loss {avg_loss:.4f}")
+
+    
 
 if __name__ == "__main__":
     train()
