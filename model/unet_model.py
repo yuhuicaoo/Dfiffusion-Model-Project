@@ -84,13 +84,13 @@ class SimpleUNet(nn.Module):
         self.conv0 = nn.Conv2d(in_channels, down_channels[0], kernel_size=3, padding=1)
         self.downs = nn.ModuleList(
             [
-                Block(down_channels[i], down_channels[i + 1], time_emb_dim)
+                Block(down_channels[i], down_channels[i + 1], time_emb_dim, up=False)
                 for i in range(len(down_channels) - 1)
             ]
         )
         self.ups = nn.ModuleList(
             [
-                Block(up_channels[i], up_channels[i+1], time_emb_dim, up=True)
+                Block(up_channels[i], up_channels[i + 1], time_emb_dim, up=True)
                 for i in range(len(up_channels) - 1)
             ]
         )
@@ -108,6 +108,6 @@ class SimpleUNet(nn.Module):
         for up in self.ups:
             residual_x = residual_inputs.pop()
             # concatenate skip connection to inputs
-            x = torch.cat((x, residual_x), dim=-1)
+            x = torch.cat((x, residual_x), dim=1)
             x = up(x, t)
         return self.output(x)
