@@ -6,3 +6,4 @@ venv/
 *.pth
 models
 *.pyc
+./data

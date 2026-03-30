@@ -5,6 +5,7 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
+from tqdm import tqdm
 
 def get_dataloader(config: DiffusionConfig):
 
@@ -38,3 +39,36 @@ def train():
     diffusion_model = Diffusion(config=config).to(config.device)
     optimiser = AdamW(diffusion_model.parameters(), lr=config.learning_rate)
     lr_scheduler = CosineAnnealingLR(optimizer=optimiser, T_max=config.epochs)
+    dataloader = get_dataloader(config=config)
+
+    num_params = sum(p.numel() for p in diffusion_model.parameters() if p.requires_grad)
+    print(f"Trainable parameters: {num_params:,}")
+
+    for epoch in tqdm(range(config.epochs)):
+        diffusion_model.train()
+        epoch_loss = 0.0
+
+        for step, (images, _) in enumerate(dataloader):
+            images = images.to(config.device)
+
+            optimiser.zero_grad()
+
+            loss = diffusion_model(images)
+            loss.backward()
+
+            optimiser.step()
+
+            epoch_loss += loss.item()
+
+            if step % 100 == 0:
+                avg = epoch_loss / (step + 1)
+                print(f"Epoch {epoch+1}/{config.epochs} | Step {step}/{len(dataloader)} | Loss {avg:.4f}")
+
+        lr_scheduler.step()
+        avg_loss = epoch_loss / len(dataloader)
+        print(f"Epoch {epoch+1} finished | Avg loss {avg_loss:.4f}")
+
+    
+
+if __name__ == "__main__":
+    train()
