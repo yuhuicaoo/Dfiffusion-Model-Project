@@ -81,7 +81,7 @@ class Diffusion(nn.Module):
 
             # add new Gaussian noise only if t > 1, else zeros if t = 1
             if i > 1:
-                noise = torch.rand_like(x)
+                noise = torch.randn_like(x)
             else:
                 noise = torch.zeros_like(x)
             
