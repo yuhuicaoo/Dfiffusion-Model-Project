@@ -85,7 +85,7 @@ class Diffusion(nn.Module):
             else:
                 noise = torch.zeros_like(x)
             
-            x = (1 / torch.sqrt(alpha)) * (x - ((1 - alpha) / torch.sqrt(1 - alpha)) * predicted_noise) + torch.sqrt(beta) *noise
+            x = (1 / torch.sqrt(alpha)) * (x - ((1 - alpha) / torch.sqrt(1 - alpha_hat)) * predicted_noise) + torch.sqrt(beta) *noise
         
         self.model.train()
         # scale from [-1, 1] to [0, 1]
