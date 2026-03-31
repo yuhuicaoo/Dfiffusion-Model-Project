@@ -45,7 +45,7 @@ def train(resume_checkpoint_path: str = None):
             scaler.scale(loss).backward()
             scaler.unscale_(optimiser)
             torch.nn.utils.clip_grad_norm_(diffusion_model.parameters(), max_norm=1.0)
-            scaler.step(optimiser.step())
+            scaler.step(optimiser)
             scaler.update()
 
             epoch_loss += loss.item()
