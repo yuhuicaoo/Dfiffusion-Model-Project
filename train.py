@@ -37,9 +37,10 @@ def train(resume_checkpoint_path: str = None):
         for _, (images, _) in enumerate(dataloader):
             images = images.to(config.device)
 
-            optimiser.zero_grad()
+            optimiser.zero_grad(set_to_none=True)
 
-            loss = diffusion_model(images)
+            with torch.amp.autocast("cuda", dtype=torch.float16):
+                loss = diffusion_model(images)
             loss.backward()
 
             optimiser.step()

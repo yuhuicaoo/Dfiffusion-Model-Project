@@ -28,8 +28,9 @@ def get_dataloader(config: DiffusionConfig):
         dataset,
         batch_size=config.batch_size,
         shuffle=True,
-        num_workers=0,
-        pin_memory=False
+        num_workers=2,
+        pin_memory=True,
+        persistent_workers=True
     )
 
 
