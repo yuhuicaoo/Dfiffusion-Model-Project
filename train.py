@@ -42,7 +42,7 @@ def train(resume_checkpoint_path: str = None):
 
             with torch.amp.autocast("cuda", dtype=torch.float16):
                 loss = diffusion_model(images)
-            scaler.scale(loss.backward())
+            scaler.scale(loss).backward()
             scaler.unscale_(optimiser)
             torch.nn.utils.clip_grad_norm_(diffusion_model.parameters(), max_norm=1.0)
             scaler.step(optimiser.step())
