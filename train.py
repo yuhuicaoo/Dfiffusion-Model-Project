@@ -6,18 +6,19 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 from utils import get_dataloader, save_checkpoint, load_checkpoint
+from torch.amp import GradScaler
 
 
 def train(resume_checkpoint_path: str = None):
     config = DiffusionConfig()
     diffusion_model = Diffusion(config=config).to(config.device)
     optimiser = AdamW(diffusion_model.parameters(), lr=config.learning_rate)
-    lr_scheduler = CosineAnnealingLR(optimizer=optimiser, T_max=config.epochs)
+    scaler = GradScaler()
 
     start_epoch = 0
     if resume_checkpoint_path:
         start_epoch = load_checkpoint(
-            resume_checkpoint_path, diffusion_model, optimiser, lr_scheduler
+            resume_checkpoint_path, diffusion_model, optimiser
         )
 
     dataloader = get_dataloader(config=config)
@@ -41,9 +42,11 @@ def train(resume_checkpoint_path: str = None):
 
             with torch.amp.autocast("cuda", dtype=torch.float16):
                 loss = diffusion_model(images)
-            loss.backward()
-
-            optimiser.step()
+            scaler.scale(loss.backward())
+            scaler.unscale_(optimiser)
+            torch.nn.utils.clip_grad_norm_(diffusion_model.parameters(), max_norm=1.0)
+            scaler.step(optimiser.step())
+            scaler.update()
 
             epoch_loss += loss.item()
 
@@ -53,19 +56,18 @@ def train(resume_checkpoint_path: str = None):
             #         f"Epoch {epoch+1}/{config.epochs} | Step {step}/{len(dataloader)} | Loss {avg:.4f}"
             #     )
 
-        lr_scheduler.step()
         avg_loss = epoch_loss / len(dataloader)
         epoch_time = time.time() - start
         all_loss.append(avg_loss)
-        all_lr.append(lr_scheduler.get_last_lr()[0])
+        all_lr.append(config.learning_rate)
         all_epoch_times.append(epoch_time)
         print(f"Epoch {epoch+1} finished | Avg loss {avg_loss:.4f}")
 
         # save checkpoint every 10 epochs
         if (epoch + 1) % 10 == 0:
-            save_checkpoint(diffusion_model, optimiser, lr_scheduler, epoch + 1, avg_loss)
+            save_checkpoint(diffusion_model, optimiser, epoch + 1, avg_loss)
         
-    save_checkpoint(diffusion_model, optimiser, lr_scheduler, config.epochs, all_loss[-1])
+    save_checkpoint(diffusion_model, optimiser, config.epochs, all_loss[-1])
     return all_loss, all_lr, all_epoch_times
 
 
