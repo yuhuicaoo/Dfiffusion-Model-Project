@@ -17,7 +17,7 @@ def train(resume_checkpoint_path: str = None):
     start_epoch = 0
     if resume_checkpoint_path:
         start_epoch = load_checkpoint(
-            resume_checkpoint_path, diffusion_model, optimiser
+            resume_checkpoint_path, diffusion_model, optimiser, lr_scheduler
         )
 
     dataloader = get_dataloader(config=config)
@@ -63,6 +63,8 @@ def train(resume_checkpoint_path: str = None):
         # save checkpoint every 10 epochs
         if (epoch + 1) % 10 == 0:
             save_checkpoint(diffusion_model, optimiser, epoch + 1, avg_loss)
+        
+    save_checkpoint(diffusion_model, optimiser, lr_scheduler, config.epochs, all_loss[-1])
     return all_loss, all_lr, all_epoch_times
 
 

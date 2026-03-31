@@ -33,20 +33,23 @@ def get_dataloader(config: DiffusionConfig):
     )
 
 
-def save_checkpoint(diffusion_model: Diffusion, optimiser, epoch: int, loss: float, output_dir: str = "checkpoints"):
+def save_checkpoint(model, optimiser, scheduler, epoch, loss, output_dir: str = "checkpoints"):
     os.makedirs(output_dir, exist_ok=True)
     path = f"{output_dir}/checkpoint_epoch_{epoch:04d}.pt"
     torch.save({
         "epoch": epoch,
-        "model_state_dict": diffusion_model.state_dict(),
+        "model_state_dict": model.state_dict(),
         "optimiser_state_dict": optimiser.state_dict(),
+        "scheduler_state_dict": scheduler.state_dict(),
         "loss": loss,
     }, path)
     print(f"Checkpoint saved at {path}")
 
-def load_checkpoint(path: str, diffusion_model: Diffusion, optimiser):
+def load_checkpoint(path, model, optimiser, scheduler):
     checkpoint = torch.load(path, map_location="cpu")
-    diffusion_model.load_state_dict(checkpoint["model_state_dict"])
+    model.load_state_dict(checkpoint["model_state_dict"])
     optimiser.load_state_dict(checkpoint["optimiser_state_dict"])
+    scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+
     print(f"Resumed from {path} (epoch {checkpoint['epoch']}, loss {checkpoint['loss']:.4f})")
     return checkpoint["epoch"] + 1
