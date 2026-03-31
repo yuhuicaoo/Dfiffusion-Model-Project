@@ -34,7 +34,7 @@ def train(resume_checkpoint_path: str = None):
         diffusion_model.train()
         epoch_loss = 0.0
 
-        for step, (images, _) in enumerate(dataloader):
+        for _, (images, _) in enumerate(dataloader):
             images = images.to(config.device)
 
             optimiser.zero_grad()
@@ -46,11 +46,11 @@ def train(resume_checkpoint_path: str = None):
 
             epoch_loss += loss.item()
 
-            if step % 100 == 0:
-                avg = epoch_loss / (step + 1)
-                print(
-                    f"Epoch {epoch+1}/{config.epochs} | Step {step}/{len(dataloader)} | Loss {avg:.4f}"
-                )
+            # if step % 100 == 0:
+            #     avg = epoch_loss / (step + 1)
+            #     print(
+            #         f"Epoch {epoch+1}/{config.epochs} | Step {step}/{len(dataloader)} | Loss {avg:.4f}"
+            #     )
 
         lr_scheduler.step()
         avg_loss = epoch_loss / len(dataloader)
