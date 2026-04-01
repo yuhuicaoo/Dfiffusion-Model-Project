@@ -39,7 +39,7 @@ def train(resume_checkpoint_path: str = None):
         for images, _ in tqdm(dataloader, desc="Encoding"):
             images = images.to(config.device)
             latents = (
-                vae.encode(images.float()).latent_dist.sample()
+                vae.encode(images.half()).latent_dist.sample()
                 * vae.config.scaling_factor
             )
             all_latents.append(latents.cpu())
