@@ -6,7 +6,7 @@ class DiffusionConfig:
     image_size: int = 256
     in_channels: int = 3        # number of color channels (1 = greyscale, 3 = RGB)
     latent_channels: int = 4    # number of l
-    base_channels: int = 64     # network width (larger = smarter but slower)
+    base_channels: int = 128     # network width (larger = smarter but slower)
     time_emb_dim: int = 256     # size of time signal vector
     timesteps: int = 1000       # how many steps until image becomes pure static noise
     device: str = 'cuda' if torch.cuda.is_available() else 'cpu'
