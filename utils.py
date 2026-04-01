@@ -17,7 +17,7 @@ def get_dataloader(config: DiffusionConfig):
     ])
 
     # intialise dataset
-    dataset = datasets.CelebA(
+    dataset = datasets.CIFAR10(
         root="./data",
         split='train',
         transform=transform,

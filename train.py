@@ -68,7 +68,11 @@ def train(resume_checkpoint_path: str = None):
             save_checkpoint(diffusion_model, optimiser, epoch + 1, avg_loss)
         
     save_checkpoint(diffusion_model, optimiser, config.epochs, all_loss[-1])
-    return all_loss, all_lr, all_epoch_times
+    return {
+        "losses": all_loss, 
+        "learning_rates": all_lr, 
+        "epoch_timnes": all_epoch_times
+    }
 
 
 if __name__ == "__main__":
