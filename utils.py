@@ -19,7 +19,7 @@ def get_dataloader(config: DiffusionConfig):
     # intialise dataset
     dataset = datasets.CIFAR10(
         root="./data",
-        split='train',
+        train=True,
         transform=transform,
         download=True
     )
