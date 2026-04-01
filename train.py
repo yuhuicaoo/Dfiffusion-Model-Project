@@ -30,19 +30,40 @@ def train(resume_checkpoint_path: str = None):
     all_lr = []
     all_epoch_times = []
 
+    print("Precomputing latents")
+    all_latents = []
+    vae = diffusion_model.vae
+    vae.eval()
+
+    with torch.no_grad():
+        for images, _ in tqdm(dataloader, desc="Encoding")
+        images = images.to(config.device)
+        latents = vae.encode(images.float()).latent_dist.sample() * vae.config.scaling_factor
+        all_latents.append(latents.cpu())
+    
+    all_latents = torch.cat(all_latents)
+    torch.save(all_latents, "latents.pt")
+
+    del diffusion_model.vae
+    torch.cuda.empty_cache()
+
+    latent_dataset = torch.utils.data.TensorDataset(all_latents)
+    latent_dataloader = torch.utils.data.DataLoader(latent_dataset, batch_size=config.batch_size, shuffle=True)
+
+
     for epoch in tqdm(range(start_epoch, config.epochs), desc="Epoch"):
         start = time.time()
         print(f"Epoch {epoch + 1}/{config.epochs}")
         diffusion_model.train()
         epoch_loss = 0.0
 
-        for _, (images, _) in enumerate(dataloader):
-            images = images.to(config.device)
+        for _, (latents, _) in enumerate(latent_dataloader):
+            latents = latents.to(config.device)
 
             optimiser.zero_grad(set_to_none=True)
 
             with torch.amp.autocast("cuda", dtype=torch.float16):
-                loss = diffusion_model(images)
+                loss = diffusion_model(latents)
             scaler.scale(loss).backward()
             scaler.unscale_(optimiser)
             torch.nn.utils.clip_grad_norm_(diffusion_model.parameters(), max_norm=1.0)

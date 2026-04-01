@@ -56,12 +56,8 @@ class Diffusion(nn.Module):
         # Sample a random batch (size n) of timesteps
         timesteps = self.sample_timesteps(x.shape[0])
 
-        # encode pixel representation into latent space representation
-        with torch.no_grad():
-            latent_representation = self.vae.encode(x).latent_dist.sample() * self.vae.config.scaling_factor
-
         # Create noisy images and get noise used.
-        x_t , noise = self.noise_images(latent_representation, timesteps)
+        x_t , noise = self.noise_images(x, timesteps)
 
         # Predict the noise applied to the original image using a simple U-Net model
         predicted_noise = self.model(x_t, timesteps)
