@@ -95,7 +95,7 @@ class Diffusion(nn.Module):
         
         # decode latent space representation back to pixel space
         x = x / self.vae.config.scaling_factor
-        x = self.vae.decode(x).sample
+        x = self.vae.decode(x.half()).sample
 
     
         self.model.train()
