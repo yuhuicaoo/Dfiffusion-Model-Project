@@ -30,13 +30,13 @@ def train(resume_checkpoint_path: str = None):
     all_lr = []
     all_epoch_times = []
 
-    for epoch in range(start_epoch, config.epochs):
+    for epoch in tqdm(range(start_epoch, config.epochs), desc="Epoch"):
         start = time.time()
         print(f"Epoch {epoch + 1}/{config.epochs}")
         diffusion_model.train()
         epoch_loss = 0.0
 
-        for _, (images, _) in tqdm(enumerate(dataloader), desc="Training"):
+        for _, (images, _) in enumerate(dataloader):
             images = images.to(config.device)
 
             optimiser.zero_grad(set_to_none=True)
