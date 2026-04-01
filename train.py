@@ -36,8 +36,7 @@ def train(resume_checkpoint_path: str = None):
         diffusion_model.train()
         epoch_loss = 0.0
 
-        pbar = tqdm(dataloader, desc=f"Training")
-        for images in pbar:
+        for _, (images, _) in tqdm(enumerate(dataloader), desc="Training"):
             images = images.to(config.device)
 
             optimiser.zero_grad(set_to_none=True)
