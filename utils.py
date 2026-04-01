@@ -19,7 +19,7 @@ def get_dataloader(config: DiffusionConfig):
     # intialise dataset
     dataset = datasets.CelebA(
         root="./data",
-        train=True,
+        split='train',
         transform=transform,
         download=True
     )
