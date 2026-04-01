@@ -30,12 +30,14 @@ def train(resume_checkpoint_path: str = None):
     all_lr = []
     all_epoch_times = []
 
-    for epoch in tqdm(range(start_epoch, config.epochs), desc="Epochs"):
+    for epoch in range(start_epoch, config.epochs):
         start = time.time()
+        print(f"Epoch {epoch + 1}/{config.epochs}")
         diffusion_model.train()
         epoch_loss = 0.0
 
-        for _, (images, _) in enumerate(dataloader):
+        pbar = tqdm(dataloader, desc=f"Training")
+        for images in pbar:
             images = images.to(config.device)
 
             optimiser.zero_grad(set_to_none=True)
@@ -57,11 +59,14 @@ def train(resume_checkpoint_path: str = None):
             #     )
 
         avg_loss = epoch_loss / len(dataloader)
-        epoch_time = time.time() - start
         all_loss.append(avg_loss)
-        all_lr.append(config.learning_rate)
+
+        epoch_time = time.time() - start
         all_epoch_times.append(epoch_time)
-        print(f"Epoch {epoch+1} finished | Avg loss {avg_loss:.4f}")
+        print(f"Epoch {epoch + 1} finished | Training Loss {avg_loss:4f} \n \
+              Epoch Time: {epoch_time:.2f}s | Avg Epoch Time: {(sum(all_epoch_times) / len(all_epoch_times)):.2f}s")
+
+        all_lr.append(config.learning_rate)
 
         # save checkpoint every 10 epochs
         if (epoch + 1) % 50 == 0:
