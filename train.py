@@ -36,11 +36,14 @@ def train(resume_checkpoint_path: str = None):
     vae.eval()
 
     with torch.no_grad():
-        for images, _ in tqdm(dataloader, desc="Encoding")
-        images = images.to(config.device)
-        latents = vae.encode(images.float()).latent_dist.sample() * vae.config.scaling_factor
-        all_latents.append(latents.cpu())
-    
+        for images, _ in tqdm(dataloader, desc="Encoding"):
+            images = images.to(config.device)
+            latents = (
+                vae.encode(images.float()).latent_dist.sample()
+                * vae.config.scaling_factor
+            )
+            all_latents.append(latents.cpu())
+
     all_latents = torch.cat(all_latents)
     torch.save(all_latents, "latents.pt")
 
@@ -48,8 +51,14 @@ def train(resume_checkpoint_path: str = None):
     torch.cuda.empty_cache()
 
     latent_dataset = torch.utils.data.TensorDataset(all_latents)
-    latent_dataloader = torch.utils.data.DataLoader(latent_dataset, batch_size=config.batch_size, shuffle=True)
-
+    latent_dataloader = torch.utils.data.DataLoader(
+        latent_dataset,
+        batch_size=config.batch_size,
+        shuffle=True,
+        num_workers=2,
+        pin_memory=True,
+        persistent_workers=True,
+    )
 
     for epoch in tqdm(range(start_epoch, config.epochs), desc="Epoch"):
         start = time.time()
@@ -83,20 +92,22 @@ def train(resume_checkpoint_path: str = None):
 
         epoch_time = time.time() - start
         all_epoch_times.append(epoch_time)
-        print(f"Epoch {epoch + 1} finished | Training Loss {avg_loss:4f} \n \
-              Epoch Time: {epoch_time:.2f}s | Avg Epoch Time: {(sum(all_epoch_times) / len(all_epoch_times)):.2f}s")
+        print(
+            f"Epoch {epoch + 1} finished | Training Loss {avg_loss:4f} \n \
+              Epoch Time: {epoch_time:.2f}s | Avg Epoch Time: {(sum(all_epoch_times) / len(all_epoch_times)):.2f}s"
+        )
 
         all_lr.append(config.learning_rate)
 
         # save checkpoint every 10 epochs
         if (epoch + 1) % 50 == 0:
             save_checkpoint(diffusion_model, optimiser, epoch + 1, avg_loss)
-        
+
     save_checkpoint(diffusion_model, optimiser, config.epochs, all_loss[-1])
     return {
-        "losses": all_loss, 
-        "learning_rates": all_lr, 
-        "epoch_timnes": all_epoch_times
+        "losses": all_loss,
+        "learning_rates": all_lr,
+        "epoch_timnes": all_epoch_times,
     }
 
 
