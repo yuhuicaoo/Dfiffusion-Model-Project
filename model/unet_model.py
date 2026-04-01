@@ -69,8 +69,8 @@ class Block(nn.Module):
 class SimpleUNet(nn.Module):
     def __init__(self, config: DiffusionConfig):
         super().__init__()
-        in_channels = config.in_channels
-        output_dim = config.in_channels
+        in_channels = config.latent_channels
+        output_dim = config.latent_channels
         time_emb_dim = config.time_emb_dim
         down_channels = (64, 128, 256, 512, 1024)
         up_channels = (1024, 512, 256, 128, 64)
