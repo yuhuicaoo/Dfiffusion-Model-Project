@@ -66,7 +66,7 @@ def train(resume_checkpoint_path: str = None):
         diffusion_model.train()
         epoch_loss = 0.0
 
-        for _, (latents, _) in enumerate(latent_dataloader):
+        for _, (latents,) in enumerate(latent_dataloader):
             latents = latents.to(config.device)
 
             optimiser.zero_grad(set_to_none=True)
