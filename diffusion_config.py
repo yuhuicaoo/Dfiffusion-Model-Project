@@ -3,7 +3,7 @@ import torch
 
 @dataclass
 class DiffusionConfig:
-    image_size: int = 128
+    image_size: int = 256
     in_channels: int = 3        # number of color channels (1 = greyscale, 3 = RGB)
     latent_channels: int = 4    # number of l
     base_channels: int = 64     # network width (larger = smarter but slower)
