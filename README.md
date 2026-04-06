@@ -42,8 +42,8 @@ A diffusion model works in two phases:
 │   ├── diffusion_config.py     # Configurration for hyperparameters
 │   ├── utils.py                # DataLoader, checkpoint save & load
 │   └── model/
-│       └── diffusion_model.py  # Diffusion Model architecture
-        └── unet_model.py       # U-Net architecture
+│       ├── diffusion_model.py  # Diffusion Model architecture
+|       └── unet_model.py       # U-Net architecture
 ```
 
 ## Key Configurations (`diffusion_config.py`)
