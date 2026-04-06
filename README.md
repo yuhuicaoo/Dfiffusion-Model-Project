@@ -18,10 +18,8 @@ I got curious about how image generation actually works under the hood, not just
 Still a work in progress and very much a learning experience!
 
 ## 🧠 Overview
-
-A diffusion model works in two phases:
-
-- **Forward process:** Gradually add Gaussian noise to the image over _t_ timesteps until it becomes pure static.
+- **Encoding process:** A Variational autoencoder (VAE) first compresses the input image into a smaller latent representation, the diffusion process then operates in this latent space rather than on raw pixels.
+- **Forward process:** Gradually add Gaussian noise to the image over $t$ timesteps until it becomes pure static.
 - **Teaching process:** Train a neural network (UNet) to learn the noise that was added to the image.
 - **Reverse process:** Generate new images from pure static noise by applying the learned UNet.
 
@@ -32,6 +30,7 @@ A diffusion model works in two phases:
 | Deep Learning | PyTorch                    |
 | Dataset       | CIFAR-10 (via torchvision) |
 | Model         | Custom UNet                |
+| VAE model     | HuggingFace AutoencoderKL  |
 | Language      | Python 3.10+               |
 
 ## 📁Project Structure
@@ -64,6 +63,7 @@ beta_end: = 0.02
 - [ ] Train diffusion model on CelebA or custom dataset
 - [ ] Research how to improve image quality
 - [ ] Implement cross-attention mechanism for conditional image generation
+- [ ] Visualise latent space representations from the VAE
 
 
 ## 📬 Contact
