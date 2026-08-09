@@ -35,18 +35,20 @@ class ResnetBlock(nn.Module):
         if up:
             self.conv1 = nn.Conv2d(2 * in_channels, out_channels, kernel_size=3, padding=1)
             self.transform = nn.ConvTranspose2d(out_channels, out_channels, kernel_size=4, stride=2, padding=1)
+            residual_in_channels = 2 * in_channels
         else:
             self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
             self.transform = nn.ConvTranspose2d(out_channels, out_channels, kernel_size=4, stride=2, padding=1)
+            residual_in_channels = in_channels
 
-        self.conv2 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
         self.norm1 = nn.GroupNorm(num_groups=8, num_channels=out_channels)
         self.norm2 = nn.GroupNorm(num_groups=8, num_channels=out_channels)
         self.silu = nn.SiLU()
 
         self.residual_proj = (
-            nn.Conv2d(in_channels, out_channels, kernel_size=1)
-            if in_channels != out_channels else nn.Identity()
+            nn.Conv2d(residual_in_channels, out_channels, kernel_size=1)
+            if residual_in_channels != out_channels else nn.Identity()
         )
 
     def forward(self, x, t):
@@ -60,8 +62,10 @@ class ResnetBlock(nn.Module):
         # second convolution
         h = self.silu(self.norm2(self.conv2(h)))
 
+        h = h + self.residual_proj(x)
+
         # residual connection 
-        return h + self.residual_proj(x)
+        return self.transform(h)
 
 class Bottleneck(nn.Module):
     def __init__(self, channels, time_embd_dim):
