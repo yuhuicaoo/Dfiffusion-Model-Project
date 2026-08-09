@@ -2,7 +2,7 @@ import math
 import torch
 import torch.nn as nn
 from diffusion_config import DiffusionConfig
-from attention import SelfAttention2D
+from model.attention import SelfAttention2D
 
 class SinusoidalPositionEmbeddings(nn.Module):
     def __init__(self, dim):
