@@ -44,7 +44,7 @@ def train(resume_checkpoint_path: str = None):
         # load on every rank, map to this rank's device
         start_epoch = load_checkpoint(resume_checkpoint_path, diffusion_model.module, optimiser)
  
-    train_ds, val_ds, _ = get_datasets(config=config, val_split=0.1, seed=42)
+    train_ds, val_ds, _ = get_datasets(config=config, val_split=0.2, seed=42)
  
     # DistributedSampler splits data across ranks, no shuffle=True on the loader itself
     train_sampler = DistributedSampler(train_ds, num_replicas=world_size, rank=rank, shuffle=True)
