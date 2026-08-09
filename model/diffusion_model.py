@@ -10,7 +10,7 @@ class Diffusion(nn.Module):
         super().__init__()
         self.config = config
         self.model = SimpleUNet(config).to(config.device)
-        self.vae = AutoencoderKL.from_pretrained("stabilityai/sd-vae-ft-mse", torch_dtype=torch.float16).to(config.device)
+        self.vae = AutoencoderKL.from_pretrained("stabilityai/sd-vae-ft-mse", subfolder='vae').to(config.device)
 
         # noise scheduler of evenly spaced values from beta_start to beta_end for N timesteps
         self.beta = torch.linspace(config.beta_start, config.beta_end, config.timesteps).to(config.device)
@@ -20,8 +20,10 @@ class Diffusion(nn.Module):
         self.alpha_hat = torch.cumprod(self.alpha, dim=0)   # (timesteps, )
 
         # freeze weights for vae model
-        for params in self.vae.parameters():
-            params.requires_grad = False
+        self.vae.requires_grad_(False)
+        self.vae.eval()
+
+        self.scaling_factor = self.vae.config.scaling_factor
 
     def noise_images(self, x, t):
         """
@@ -50,14 +52,30 @@ class Diffusion(nn.Module):
         :param n: batch size
         :return t: batch of random timesteps of size n (batch size)
         """
-        return torch.randint(low=1, high=self.config.timesteps, size=(n,), device=self.config.device)
+        return torch.randint(low=0, high=self.config.timesteps, size=(n,), device=self.config.device)
+
+    def _encode(self, images):
+        """
+        images: expected to be [-1, 1] range
+        """
+        with torch.no_grad():
+            latents = self.vae.encode(images).latent_dist.sample()
+        return latents * self.scaling_factor
+
+    def _decode(self, latents):
+        with torch.no_grad():
+            images = self.vae.decode(latents / self.scaling_factor).sample
+        return images
     
     def forward(self, x):
+        latents = self._encode(x)
+        bsz = latents.shape[0]
+
         # Sample a random batch (size n) of timesteps
-        timesteps = self.sample_timesteps(x.shape[0])
+        timesteps = self.sample_timesteps(bsz)
 
         # Create noisy images and get noise used.
-        x_t , noise = self.noise_images(x, timesteps)
+        x_t , noise = self.noise_images(latents, timesteps)
 
         # Predict the noise applied to the original image using a simple U-Net model
         predicted_noise = self.model(x_t, timesteps)
@@ -66,39 +84,55 @@ class Diffusion(nn.Module):
         return F.mse_loss(noise, predicted_noise)
     
     @torch.no_grad()
-    def sample(self, n_samples):
-        """Inference step: generate images from pure noise"""
-
+    def sample(self, n_samples, steps=50, eta=0.0):
+        """Inference step (DDIM): generate images from pure noise"""
         self.model.eval()
+
         latent_size = self.config.image_size // 8        # latent_size = image_size // 8 (vae downsamples by 8x)
-        x = torch.randn((n_samples, self.config.latent_channels, latent_size, latent_size)).to(self.config.device)        # (n_samples, latent_channels, latent_size, latent_size)
+        latents = torch.randn(n_samples, self.config.latent_channels, latent_size, latent_size, device=self.config.device)        # (n_samples, latent_channels, latent_size, latent_size)
+
+        # DDIM timestep schedule
+        timesteps = torch.linspace(self.config.timesteps -1, 0, steps, device=self.config.device)
 
         # loop backwards from t= timesteps-1 to t=1
-        for i in reversed(range(1, self.config.timesteps)):
-            t = (torch.ones(n_samples) * i).long().to(self.config.device)
+        for i, timestep in enumerate(timesteps):
+            # create timestep tensor
+            t = torch.full((n_samples,), timestep, dtype=torch.long, device=self.config.device)
 
             # get predicted noise from U-Net model
-            predicted_noise = self.model(x, t)
+            pred_noise = self.model(latents, t)
 
             # get noise schedule values for specific timestep
-            alpha = self.alpha[t][:, None, None, None]
-            alpha_hat = self.alpha_hat[t][:, None, None, None]
-            beta = self.beta[t][:, None, None, None]
+            alpha_hat_t = self.alpha_hat[t][:, None, None, None]
 
-            # add new Gaussian noise only if t > 1, else zeros if t = 1
-            if i > 1:
-                noise = torch.randn_like(x)
+            # previous timestep
+            if i + 1 < len(timestep):
+                t_prev = timesteps[i + 1]
+
+                alpha_hat_prev = self.alpha_hat[t_prev].expand(n_samples)[:, None, None, None]
             else:
-                noise = torch.zeros_like(x)
-            
-            x = (1 / torch.sqrt(alpha)) * (x - ((1 - alpha) / torch.sqrt(1 - alpha_hat)) * predicted_noise) + torch.sqrt(beta) *noise
-        
-        # decode latent space representation back to pixel space
-        x = x / self.vae.config.scaling_factor
-        x = self.vae.decode(x.half()).sample
+                # at final step, alpha_hat_prev = 1
+                alpha_hat_prev = torch.ones_like(alpha_hat_t)
 
-    
+            # predict x_0
+            x0_pred = (latents - torch.sqrt(1 - alpha_hat_t) * pred_noise) / torch.sqrt(alpha_hat_t)
+            x0_pred = x0_pred.clamp(-1, 1)
+
+            # DDIM sigma 
+            sigma = eta * torch.sqrt((1-alpha_hat_prev) / (1 - alpha_hat_t) * (1 - alpha_hat_t/alpha_hat_prev))
+
+            # direction pointing to x_t
+            direction = torch.sqrt(1 - alpha_hat_prev - sigma**2) * pred_noise
+
+            # random noise
+            noise = torch.randn_like(latents) if eta > 0 else torch.zeros_like(latents)
+
+            # DDIM update
+            x = torch.sqrt(alpha_hat_prev) * x0_pred + direction + sigma * noise
+            
+        
         self.model.train()
-        # scale from [-1, 1] to [0, 1]
-        x = (x.clamp(-1,1) + 1) /2
-        return x
+        # decode latent space representation back to pixel space
+        images = self._decode(latents)    
+        images = (images.clamp(-1,1) + 1) /2              # [-1, 1] --> [0, 1]
+        return images
