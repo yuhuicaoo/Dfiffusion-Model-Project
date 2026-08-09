@@ -14,6 +14,6 @@ class DiffusionConfig:
     beta_start: float = 1e-4
     beta_end: float = 0.02
     # Training: 
-    batch_size: int = 4
+    batch_size: int = 2
     epochs: int = 100
     learning_rate: float = 1e-4
