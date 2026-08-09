@@ -65,7 +65,7 @@ def get_dataloaders(config: DiffusionConfig, val_split: float = 0.1, seed: int =
         train_ds, 
         batch_size=config.batch_size, 
         shuffle=True,
-        num_workers=2,
+        num_workers=4,
         pin_memory=True,
         persistent_workers=True
     )
@@ -74,7 +74,7 @@ def get_dataloaders(config: DiffusionConfig, val_split: float = 0.1, seed: int =
         val_ds,
         batch_size=config.batch_size, 
         shuffle=False,
-        num_workers=2,
+        num_workers=4,
         pin_memory=True,
         persistent_workers=True
     )
@@ -83,7 +83,7 @@ def get_dataloaders(config: DiffusionConfig, val_split: float = 0.1, seed: int =
         test_ds,
         batch_size=config.batch_size, 
         shuffle=False,
-        num_workers=2,
+        num_workers=4,
         pin_memory=True,
         persistent_workers=True
     )

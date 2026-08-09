@@ -22,7 +22,8 @@ def train(resume_checkpoint_path: str = None):
             resume_checkpoint_path, diffusion_model, optimiser
         )
 
-    train_loader, val_loader, _ = get_dataloaders(config=config, val_split=0.1, seed=42)
+    train_loader, val_loader, _ = get_dataloaders(config=config, val_split=0.2, seed=42)
+    print(len(train_loader), len(val_loader))
 
     num_params = sum(p.numel() for p in diffusion_model.parameters() if p.requires_grad)
     print(f"Trainable parameters: {num_params:,}")
