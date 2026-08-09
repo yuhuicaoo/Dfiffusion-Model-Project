@@ -38,7 +38,7 @@ class ResnetBlock(nn.Module):
             residual_in_channels = 2 * in_channels
         else:
             self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
-            self.transform = nn.ConvTranspose2d(out_channels, out_channels, kernel_size=4, stride=2, padding=1)
+            self.transform = nn.Conv2d(out_channels, out_channels, kernel_size=4, stride=2, padding=1)
             residual_in_channels = in_channels
 
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
@@ -76,9 +76,9 @@ class Bottleneck(nn.Module):
         self.block2 = ResnetBlock(channels, channels, time_embd_dim)
 
     def forward(self, x, t):
-        x = self.block(x, t)
-        x = self.attn(x)
         x = self.block1(x, t)
+        x = self.attn(x)
+        x = self.block2(x, t)
         return x
 
 class SimpleUNet(nn.Module):
