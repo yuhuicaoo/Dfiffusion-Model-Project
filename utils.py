@@ -22,7 +22,7 @@ def build_train_val_transforms(config: DiffusionConfig) -> tuple[AlbumentationsW
         A.Resize(config.image_size, config.image_size),
         A.HorizontalFlip(p=0.5),
         A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=10, p=0.5),
-        A.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, p=03),
+        A.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, p=0.3),
         A.Normalize(mean=[0.5] * config.in_channels, std=[0.5] * config.in_channels),
         ToTensorV2()
     ]))
