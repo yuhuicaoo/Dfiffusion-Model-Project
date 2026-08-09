@@ -103,7 +103,7 @@ class SimpleUNet(nn.Module):
         )
         self.ups = nn.ModuleList(
             [
-                ResnetBlock(up_channels[i], up_channels[i + 1], time_emb_dim, up=True)
+                ResnetBlock(up_channels[i] * 2, up_channels[i + 1], time_emb_dim, up=True)
                 for i in range(len(up_channels) - 1)
             ]
         )
