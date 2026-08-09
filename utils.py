@@ -46,7 +46,7 @@ def split_train_val_indices(n_total: int, val_split: float = 0.1, seed: int = 42
 def get_datasets(config: DiffusionConfig, val_split: float = 0.1, seed: int = 42):
     train_transform, eval_transform = build_train_val_transforms(config=config)
 
-    raw = datasets.CIFAR10(root="./data", train=True, download=False)
+    raw = datasets.CIFAR10(root="./data", train=True, download=True)
     train_indices, val_indices = split_train_val_indices(len(raw), val_split, seed)
 
     train_ds_full = datasets.CIFAR10(root="./data", train=True, transform=train_transform, download=False)
