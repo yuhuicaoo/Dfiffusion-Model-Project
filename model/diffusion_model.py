@@ -10,7 +10,7 @@ class Diffusion(nn.Module):
         super().__init__()
         self.config = config
         self.model = SimpleUNet(config).to(config.device)
-        self.vae = AutoencoderKL.from_pretrained("stabilityai/sd-vae-ft-mse", subfolder='vae').to(config.device)
+        self.vae = AutoencoderKL.from_pretrained("stabilityai/sd-vae-ft-mse").to(config.device)
 
         # noise scheduler of evenly spaced values from beta_start to beta_end for N timesteps
         self.beta = torch.linspace(config.beta_start, config.beta_end, config.timesteps).to(config.device)
