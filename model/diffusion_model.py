@@ -106,7 +106,7 @@ class Diffusion(nn.Module):
             alpha_hat_t = self.alpha_hat[t][:, None, None, None]
 
             # previous timestep
-            if i + 1 < len(timestep):
+            if i + 1 < len(timesteps):
                 t_prev = timesteps[i + 1]
 
                 alpha_hat_prev = self.alpha_hat[t_prev].expand(n_samples)[:, None, None, None]
@@ -128,7 +128,7 @@ class Diffusion(nn.Module):
             noise = torch.randn_like(latents) if eta > 0 else torch.zeros_like(latents)
 
             # DDIM update
-            x = torch.sqrt(alpha_hat_prev) * x0_pred + direction + sigma * noise
+            latents = torch.sqrt(alpha_hat_prev) * x0_pred + direction + sigma * noise
             
         
         self.model.train()
