@@ -92,7 +92,7 @@ class Diffusion(nn.Module):
         latents = torch.randn(n_samples, self.config.latent_channels, latent_size, latent_size, device=self.config.device)        # (n_samples, latent_channels, latent_size, latent_size)
 
         # DDIM timestep schedule
-        timesteps = torch.linspace(self.config.timesteps -1, 0, steps, device=self.config.device)
+        timesteps = torch.linspace(self.config.timesteps -1, 0, steps, dtype=torch.long, device=self.config.device)
 
         # loop backwards from t= timesteps-1 to t=1
         for i, timestep in enumerate(timesteps):
